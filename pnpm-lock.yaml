@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@babel/core':
+        specifier: ^7.28.3
+        version: 7.28.3
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9

@@ -12,6 +12,12 @@ export interface HabitTrackerContext {
   error: string
 }
 
+export function SolidSample() {
+  return (
+  <div>This was rendered by SolidJS</div>
+  )
+}
+
 export function renderTable (source: string, settings: HabitTrackerPluginSettings): HTMLElement {
   const ctx = parseContext(source, settings);
 
@@ -20,6 +26,7 @@ export function renderTable (source: string, settings: HabitTrackerPluginSetting
   }
 
   const styles = ctx.tableWidth ? `width: ${ctx.tableWidth};` : '';
+  
   const table = createEl('table', { cls: 'habitt', attr: { style: styles }})
   table.appendChild(renderHead(ctx))
   table.appendChild(renderBody(ctx))
