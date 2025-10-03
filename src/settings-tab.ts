@@ -1,11 +1,11 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import HabitTrackerPlugin from './main';
+import CalendarPlugin from './main';
 import { DEFAULT_SETTINGS } from './settings';
 
-export class HabitTrackerSettingTab extends PluginSettingTab {
-  plugin: HabitTrackerPlugin;
+export class CalendarSettingTab extends PluginSettingTab {
+  plugin: CalendarPlugin;
 
-  constructor(app: App, plugin: HabitTrackerPlugin) {
+  constructor(app: App, plugin: CalendarPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }

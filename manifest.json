@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-habit-tracker",
-	"name": "Habit Tracker",
+	"id": "vault-calendar",
+	"name": "Vault Calendar",
 	"version": "1.0.4",
 	"minAppVersion": "0.9.12",
-	"description": "This plguin creates a simple Month view for visualizing your punch records.",
-	"author": "Duo",
-	"authorUrl": "https://github.com/duoani",
+	"description": "Render your dated events in an embedded calendar.",
+	"author": "Erik Lee",
+	"authorUrl": "https://github.com/aethertap",
 	"isDesktopOnly": false
 }

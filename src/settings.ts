@@ -1,4 +1,4 @@
-export interface HabitTrackerPluginSettings {
+export interface CalendarPluginSettings {
   startOfWeek: string;
   monthFormat: string;
   displayHead: boolean;
@@ -12,7 +12,7 @@ export interface HabitTrackerPluginSettings {
   Saturday: string;
 }
 
-export const DEFAULT_SETTINGS: HabitTrackerPluginSettings = {
+export const DEFAULT_SETTINGS: CalendarPluginSettings = {
   startOfWeek: '0',
   monthFormat: 'YYYY-MM',
   displayHead: true,
