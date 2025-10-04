@@ -6,6 +6,7 @@ import { CalendarPluginSettings } from './settings';
 export interface CalendarProps {
   month: number,
   year: number,
+  modified: Accessor<number>,
   events: any[],
 }
 export interface CalendarSwitcherProps {
@@ -48,7 +49,8 @@ export function Calendar(props:CalendarProps) {
   }
   let events = createMemo(() => {
     let result:{[key:string]:Event[]} = {};
-    console.log("Calendar: Reloading events...");
+    console.log(`Calendar: Reloading events... version ${props.modified()}`);
+    
     dv.pages().file.tasks
       .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
       .forEach((t:any,i:number) => {

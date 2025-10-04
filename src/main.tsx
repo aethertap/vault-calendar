@@ -6,6 +6,7 @@ import {render} from 'solid-js/web';
 import {getAPI} from 'obsidian-dataview';
 import { createSignal } from 'solid-js';
 
+
 export default class CalendarPlugin extends Plugin {
   settings: CalendarPluginSettings;
   dv_api: any;
@@ -16,15 +17,21 @@ export default class CalendarPlugin extends Plugin {
     this.addSettingTab(new CalendarSettingTab(this.app, this));
     let today=new Date();
     let [getter,setter] = createSignal([today.getFullYear(),today.getMonth()]);
+    let [is_modified,modified] = createSignal(0);
+    
     this.registerMarkdownCodeBlockProcessor('calendar', (source, el) => {
       render((()=>
         <div class="calendar-container">
         <CalendarSwitcher switcher={[getter,setter]}/>
-        <Calendar year={getter()[0]} month={getter()[1]} events={[]}/>
+        <Calendar modified={is_modified} year={getter()[0]} month={getter()[1]} events={[]}/>
         </div>
         ),el)
       //el.appendChild(renderTable(source, this.settings));
-    })
+    });
+    this.registerEvent(this.app.metadataCache.on('resolved',()=>{
+      console.log("Got the resolved event");
+      modified(is_modified()+1);
+    }));
   }
 
   async loadSettings() {
