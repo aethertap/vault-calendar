@@ -13,6 +13,7 @@ export interface CalendarSwitcherProps {
 }
 export function CalendarSwitcher(props:CalendarSwitcherProps){
   let [getter,setter] = props.switcher;
+  
   return <div class="calendar-switcher">
     <span class={getter()[1]==0?"active":"hidden"} onclick={()=>setter([getter()[0],0])}>Jan</span>
     <span class={getter()[1]==1?"active":"hidden"} onclick={()=>setter([getter()[0],1])}>Feb</span>
@@ -59,7 +60,7 @@ export function Calendar(props:CalendarProps) {
     let result:{[key:string]:Event[]} = {};
     console.log("Reloading events...");
     dv.pages().file.tasks
-      .where((t:any) => !t.complete && t.text.match(/\d\d\d\d-\d\d-\d\d/))
+      .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
       .forEach((t:any,i:number) => {
         let due = t.text.match(/\d\d\d\d-\d\d-\d\d/);
         if(due && due[0]) {
