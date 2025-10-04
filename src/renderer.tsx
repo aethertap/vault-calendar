@@ -1,6 +1,6 @@
 import { App, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { Signal, createMemo, createSignal, For } from 'solid-js';
+import { Signal, createMemo, createSignal, For, Accessor } from 'solid-js';
 import { CalendarPluginSettings } from './settings';
 
 export interface CalendarProps {
@@ -76,7 +76,8 @@ export function Calendar(props:CalendarProps) {
       });
     return result;
   });
-
+  let days = ["sun","mon","tue","wed","thu","fri","sat"];
+  let today = dateSlug(new Date());
   return (
     <div class="calendar">
       <div class="header">Sun</div>
@@ -86,15 +87,15 @@ export function Calendar(props:CalendarProps) {
       <div class="header">Thu</div>
       <div class="header">Fri</div>
       <div class="header">Sat</div>
-      <For each={dates()}>{(day:string)=> {
-          let bgclass="";
-          if(!events()[day] || events()[day].length<1) {
-            bgclass="empty";
-          }
-        
-        return <div class={`day ${bgclass}`} data-date={day}>
+      <For each={dates()}>{(day:string,i:Accessor<number>)=> {
+        let bgclass="";
+        if(!events()[day] || events()[day].length<1) {
+           bgclass="empty";
+        }
+       
+        return <div class={`day ${bgclass} ${days[i()%7]}`} data-date={day}>
           <ul class="nodecoration">
-            <li class="nodecoration daynum">{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
+            <li class={`nodecoration daynum ${day == today? "today" : ""}`}>{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
             <For each={events()[day]}>{(evt:Event) => 
               <li class="nodecoration event" onclick={()=>navTo(evt.link)}>{evt.display}</li>
             }</For>
