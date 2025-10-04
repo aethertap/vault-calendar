@@ -1,6 +1,6 @@
-import { App, moment } from 'obsidian';
+import { App, MarkdownRenderer, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { Signal, createMemo, createSignal, For, Accessor } from 'solid-js';
+import { Signal, createMemo, createSignal, For, Accessor, Index } from 'solid-js';
 import { CalendarPluginSettings } from './settings';
 
 export interface CalendarProps {
@@ -13,20 +13,11 @@ export interface CalendarSwitcherProps {
 }
 export function CalendarSwitcher(props:CalendarSwitcherProps){
   let [getter,setter] = props.switcher;
-  
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   return <div class="calendar-switcher">
-    <span class={getter()[1]==0?"active":"hidden"} onclick={()=>setter([getter()[0],0])}>Jan</span>
-    <span class={getter()[1]==1?"active":"hidden"} onclick={()=>setter([getter()[0],1])}>Feb</span>
-    <span class={getter()[1]==2?"active":"hidden"} onclick={()=>setter([getter()[0],2])}>Mar</span>
-    <span class={getter()[1]==3?"active":"hidden"} onclick={()=>setter([getter()[0],3])}>Apr</span>
-    <span class={getter()[1]==4?"active":"hidden"} onclick={()=>setter([getter()[0],4])}>May</span>
-    <span class={getter()[1]==5?"active":"hidden"} onclick={()=>setter([getter()[0],5])}>Jun</span>
-    <span class={getter()[1]==6?"active":"hidden"} onclick={()=>setter([getter()[0],6])}>Jul</span>
-    <span class={getter()[1]==7?"active":"hidden"} onclick={()=>setter([getter()[0],7])}>Aug</span>
-    <span class={getter()[1]==8?"active":"hidden"} onclick={()=>setter([getter()[0],8])}>Sep</span>
-    <span class={getter()[1]==9?"active":"hidden"} onclick={()=>setter([getter()[0],9])}>Oct</span>
-    <span class={getter()[1]==10?"active":"hidden"} onclick={()=>setter([getter()[0],10])}>Nov</span>
-    <span class={getter()[1]==11?"active":"hidden"} onclick={()=>setter([getter()[0],11])}>Dec</span>
+    <Index each={[0,1,2,3,4,5,6,7,8,9,10,11]}>{(month:Accessor<number>)=>
+      <span class={getter()[1]==month()?"active":"hidden"} onclick={()=>setter([getter()[0],month()])}>{months[month()]}</span>
+    }</Index>
   </div>
 }
 
@@ -42,7 +33,6 @@ export interface Event {
 }
 
 export function Calendar(props:CalendarProps) {
-  console.log("RESCAN**************************");
   let weekStart = ()=>firstOfMonth(props.month,props.year).getDay();
   let startDate = () => new Date(props.year, props.month, 1-weekStart());
   console.log(`startDate: ${startDate()}`);
@@ -58,7 +48,7 @@ export function Calendar(props:CalendarProps) {
   }
   let events = createMemo(() => {
     let result:{[key:string]:Event[]} = {};
-    console.log("Reloading events...");
+    console.log("Calendar: Reloading events...");
     dv.pages().file.tasks
       .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
       .forEach((t:any,i:number) => {
@@ -80,7 +70,7 @@ export function Calendar(props:CalendarProps) {
   let days = ["sun","mon","tue","wed","thu","fri","sat"];
   let today = dateSlug(new Date());
   return (
-    <div class="calendar">
+    <div class="vault-calendar">
       <div class="header">Sun</div>
       <div class="header">Mon</div>
       <div class="header">Tue</div>
@@ -97,8 +87,11 @@ export function Calendar(props:CalendarProps) {
         return <div class={`day ${bgclass} ${days[i()%7]}`} data-date={day}>
           <ul class="nodecoration">
             <li class={`nodecoration daynum ${day == today? "today" : ""}`}>{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
-            <For each={events()[day]}>{(evt:Event) => 
-              <li class="nodecoration event" onclick={()=>navTo(evt.link)}>{evt.display}</li>
+            <For each={events()[day]}>{(evt:Event) => {
+              let span = <span></span> ;
+              (MarkdownRenderer as any).render((window as any).app as App, evt.display, span); 
+              return <li class="nodecoration event" onclick={()=>navTo(evt.link)}>{span}</li>
+            }
             }</For>
           </ul>
         </div>

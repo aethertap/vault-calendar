@@ -3,7 +3,7 @@
   *{
     box-sizing: border-box;
   }
-  .calendar {
+  .vault-calendar {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
     transition: all 0.5s;
@@ -29,7 +29,7 @@
       grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 3fr; 
     }
     grid-template-rows: max-content;
-    grid-auto-rows: 1fr;
+    grid-auto-rows: minmax(10vh,min-content);
     div {
       border:2px solid var(--background-modifier-border);
       padding: 0;
@@ -37,6 +37,7 @@
       padding-left: 0.2rem;
       position:relative;
       overflow-x:hidden;
+      color: var(--text-normal);
       &.header {
         font-weight: bold;
         color: var(--text-normal);
@@ -52,10 +53,6 @@
           transition: all 0.5s;
           background-color: var(--background-modifier-hover);
           li.event {
-            transition-property: text-wrap;
-            trasition-delay: text-wrap 1s;
-            transition-timing-function: text-wrap step-end;
-            transition-time: 0s;
             text-wrap: wrap;
           }
          }
