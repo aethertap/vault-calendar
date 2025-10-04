@@ -1,4 +1,4 @@
-import { moment } from 'obsidian';
+import { App, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { Signal, createMemo, createSignal, For } from 'solid-js';
 import { CalendarPluginSettings } from './settings';
@@ -33,6 +33,13 @@ function dateSlug(date:Date): string {
   return `${date.getFullYear()}-${("0"+(date.getMonth()+1)).slice(-2)}-${("000"+date.getDate()).slice(-2)}`;
 }
 
+export interface Event {
+  start:string,
+  display:string,
+  end?:string,
+  link:string,
+}
+
 export function Calendar(props:CalendarProps) {
   console.log("RESCAN**************************");
   let weekStart = ()=>firstOfMonth(props.month,props.year).getDay();
@@ -49,7 +56,7 @@ export function Calendar(props:CalendarProps) {
     return result;
   }
   let events = createMemo(() => {
-    let result:{[key:string]:string[]} = {};
+    let result:{[key:string]:Event[]} = {};
     console.log("Reloading events...");
     dv.pages().file.tasks
       .where((t:any) => !t.complete && t.text.match(/\d\d\d\d-\d\d-\d\d/))
@@ -59,7 +66,11 @@ export function Calendar(props:CalendarProps) {
           if(!result.hasOwnProperty(due[0])){
             result[due[0]] = [];
           }
-          result[due[0]].push(t.text.replaceAll(/\d\d\d\d-\d\d-\d\d/g,'').trim());
+          result[due[0]].push({
+            start:t.text.match(/\d\d\d\d-\d\d-\d\d/,'')[0],
+            display:t.text.replaceAll(/\d\d\d\d-\d\d-\d\d/g,'').trim(),
+            link: t.link,
+          });
           //console.log(`got event ${i}: ${t.text}`);
         } 
       });
@@ -75,18 +86,32 @@ export function Calendar(props:CalendarProps) {
       <div class="header">Thu</div>
       <div class="header">Fri</div>
       <div class="header">Sat</div>
-      <For each={dates()}>{(day:string)=>
-        <div class="day" data-date={day}>
+      <For each={dates()}>{(day:string)=> {
+          let bgclass="";
+          if(!events()[day] || events()[day].length<1) {
+            bgclass="empty";
+          }
+        
+        return <div class={`day ${bgclass}`} data-date={day}>
           <ul class="nodecoration">
             <li class="nodecoration daynum">{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
-            <For each={events()[day]}>{(evt:string) => 
-              <li class="nodecoration event">{evt}</li>
+            <For each={events()[day]}>{(evt:Event) => 
+              <li class="nodecoration event" onclick={()=>navTo(evt.link)}>{evt.display}</li>
             }</For>
           </ul>
         </div>
-        }</For> 
+        }
+      }</For> 
     </div>
   )
+}
+
+function navTo(link:any) {
+  console.log(`Navigate to ${link}`);
+  ((window as any).app as App).workspace.openLinkText(
+    link.toFile().obsidianLink(),
+    link.path
+  );
 }
 
 function firstOfMonth(month:number, year: number): Date {

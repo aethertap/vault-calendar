@@ -27,7 +27,9 @@
         min-height: 10vh;
         &:hover {
           cursor: copy;
-        }
+          transition:background-color 0.3s;
+          background-color: #acf4;
+         }
       }
     }
     ul.nodecoration {
@@ -43,7 +45,7 @@
         text-wrap: nowrap;
         &:hover {
           background: #acf;
-          transition: background 0.5s;
+          transition: background 0.3s;
           cursor: pointer;
         }
       }
