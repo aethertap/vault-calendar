@@ -1,6 +1,6 @@
 import { moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { For } from 'solid-js';
+import { createSignal, For } from 'solid-js';
 import { CalendarPluginSettings } from './settings';
 
 export interface CalendarProps {
@@ -24,19 +24,20 @@ export function Calendar(props:CalendarProps) {
     return month;
   };
   let dv = getAPI();
+  
   let events = () => {
     let result = days();
     dv.pages().file.tasks
       .where((t:any) => !t.complete && t.text.match(/\d\d\d\d-\d\d-\d\d/))
-      .forEach((t:any) => {
+      .forEach((t:any,i:number) => {
         let due = t.text.match(/\d\d\d\d-\d\d-\d\d/);
         if(due && due[0]) {
-          result[due[0]].push(t.text);
-          console.log(`got event: ${t.text}`);
+          result[due[0]].push(t.text.replaceAll(/\d\d\d\d-\d\d-\d\d/g,'').trim());
+          console.log(`got event ${i}: ${t.text}`);
         } 
       });
     return result;
-  }
+  };
 
   return (
     <div class="calendar">
@@ -48,10 +49,11 @@ export function Calendar(props:CalendarProps) {
       <div class="header">Fri</div>
       <div class="header">Sat</div>
       <For each={Object.keys(events())}>{(day:string,_i:any)=>
-        <div data-date={day}>
-          <ul>
+        <div class="day" data-date={day}>
+          <ul class="nodecoration">
+            <li class="nodecoration daynum">{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
             <For each={events()[day]}>{(evt:string) => 
-              <li>{evt}</li>
+              <li class="nodecoration event">{evt}</li>
             }</For>
           </ul>
         </div>
