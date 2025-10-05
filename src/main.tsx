@@ -1,7 +1,8 @@
 import { Plugin } from 'obsidian';
 import { CalendarPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { CalendarSettingTab } from './settings-tab';
-import {Calendar, CalendarSwitcher} from './renderer';
+import {Calendar} from './calendar';
+import {CalendarSwitcher} from './calendar-switcher';
 import {render} from 'solid-js/web';
 import {getAPI} from 'obsidian-dataview';
 import { createSignal } from 'solid-js';

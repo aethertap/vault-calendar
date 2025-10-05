@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { Signal, createMemo, createSignal, For, Accessor, Index } from 'solid-js';
 import { CalendarPluginSettings } from './settings';
+import { dateSlug,navTo,firstOfMonth,daysInMonth } from './utils';
 
 export interface CalendarProps {
   month: number,
@@ -9,22 +10,7 @@ export interface CalendarProps {
   modified: Accessor<number>,
   events: any[],
 }
-export interface CalendarSwitcherProps {
-  switcher: Signal<number[]|undefined>,
-}
-export function CalendarSwitcher(props:CalendarSwitcherProps){
-  let [getter,setter] = props.switcher;
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-  return <div class="calendar-switcher">
-    <Index each={[0,1,2,3,4,5,6,7,8,9,10,11]}>{(month:Accessor<number>)=>
-      <span class={getter()[1]==month()?"active":"hidden"} onclick={()=>setter([getter()[0],month()])}>{months[month()]}</span>
-    }</Index>
-  </div>
-}
 
-function dateSlug(date:Date): string {
-  return `${date.getFullYear()}-${("0"+(date.getMonth()+1)).slice(-2)}-${("000"+date.getDate()).slice(-2)}`;
-}
 
 export interface Event {
   start:string,
@@ -103,20 +89,4 @@ export function Calendar(props:CalendarProps) {
   )
 }
 
-function navTo(link:any) {
-  console.log(`Navigate to ${link}`);
-  ((window as any).app as App).workspace.openLinkText(
-    link.toFile().obsidianLink(),
-    link.path
-  );
-}
-
-function firstOfMonth(month:number, year: number): Date {
-  let result = new Date(year,month,1);
-  return result;
-}
-
-function daysInMonth(month:number, year:number): number {
-  return new Date(year,month,0).getDate()
-}
 
