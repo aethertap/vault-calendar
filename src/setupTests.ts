@@ -1,8 +1,13 @@
 // Jest setup file for additional configuration
 // Add any global test setup here
 
+// Extend global interface for testing
+declare global {
+  var app: any;
+}
+
 // Mock Obsidian API for testing
-global.app = {} as any;
+(global as any).app = {};
 
 // Mock console methods if needed
 // global.console = {
