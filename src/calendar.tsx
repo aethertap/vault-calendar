@@ -1,6 +1,7 @@
 import { App, MarkdownRenderer, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { Signal, createMemo, createSignal, For, Accessor, Index } from 'solid-js';
+import { parseDatePattern } from './datepattern';
 import { CalendarPluginSettings } from './settings';
 import { dateSlug,navTo,firstOfMonth,daysInMonth } from './utils';
 
@@ -34,12 +35,18 @@ export function Calendar(props:CalendarProps) {
     return result;
   }
   let events = createMemo(() => {
+    // matching strategy: I want to keep a set of active events, always sorted by their start date. 
+    // For each day in the month, I will output *all* of the active events in order, then remove
+    // any events that expire that day. All I need to do is sort the array by start date, then remove 
+    // items from the list as they expire on the output side.
+
     let result:{[key:string]:Event[]} = {};
     console.log(`Calendar: Reloading events... version ${props.modified()}`);
-    
+   
     dv.pages().file.tasks
       .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
-      .forEach((t:any,i:number) => {
+      .forEach((t:any,_i:number) => {
+        let when = parseDatePattern(t.text);
         let due = t.text.match(/\d\d\d\d-\d\d-\d\d/);
         if(due && due[0]) {
           if(!result.hasOwnProperty(due[0])){
