@@ -3,3 +3,11 @@
 
 // Mock Obsidian API for testing
 global.app = {} as any;
+
+// Mock console methods if needed
+// global.console = {
+//   ...console,
+//   log: jest.fn(),
+//   error: jest.fn(),
+//   warn: jest.fn(),
+// };
