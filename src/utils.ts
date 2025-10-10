@@ -30,3 +30,16 @@ export function daysAfter(date:Date,days:number):Date {
   result.setDate(result.getDate()+days);
   return result;
 }
+
+export function partition<T>(list:T[], func: (arg0:T)=>boolean ):[T[],T[]] {
+  let yes:T[] = [];
+  let no:T[] = [];
+  for(let element of list) {
+    if(func(element)) {
+      yes.push(element);
+    } else {
+      no.push(element);
+    }
+  }
+  return [yes,no]
+}

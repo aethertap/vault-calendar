@@ -29,8 +29,8 @@ export default class CalendarPlugin extends Plugin {
         ),el)
       //el.appendChild(renderTable(source, this.settings));
     });
-    this.registerEvent(this.app.metadataCache.on('resolved',()=>{
-      console.log("Got the resolved event");
+    this.registerEvent(this.app.metadataCache.on('resolved',(...args)=>{
+      console.log(`Got the resolved event. args = ${JSON.stringify(args)}`);
       modified(is_modified()+1);
     }));
   }
