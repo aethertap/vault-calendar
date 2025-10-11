@@ -69,6 +69,9 @@
       li.event {
         overflow:hidden;
         text-wrap: nowrap;
+        &.multiday{
+            background-color: hsla(var(--accent-h), calc(var(--accent-s)*0.5), var(--accent-l),20%);
+        }
         &:hover {
           background: var(--background-modifier-active-hover);
           transition: background 0.3s;

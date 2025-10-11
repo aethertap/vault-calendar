@@ -1,6 +1,6 @@
 import { App, Component, MarkdownRenderChild, MarkdownRenderer, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { Signal, createMemo, createSignal, For, Accessor, Index } from 'solid-js';
+import { Signal, createMemo, createSignal, For, Accessor, Index, Setter } from 'solid-js';
 import { render } from 'solid-js/web';
 import { CalendarSwitcher } from './calendar-switcher';
 import { parseDatePattern ,DatePattern, DateRange} from './datepattern';
@@ -12,6 +12,7 @@ export interface CalendarProps {
   month: number,
   year: number,
   modified: Accessor<number>,
+  visible: Accessor<boolean>,
   events: any[],
   sourcePath: string,
   container: Component,
@@ -30,14 +31,35 @@ export class CalendarRenderer extends MarkdownRenderChild {
   container:HTMLElement
   dv_api: any
   is_modified: Accessor<number>
+  modified:Setter<number>
+  visible:Signal<boolean>
+  observer: IntersectionObserver
+  hasRendered: boolean
+  lazyUpdate: Signal<number>
   
-  constructor(containerEl:HTMLElement, source:string, sourcePath:string,is_modified:Accessor<number>) {
+  constructor(containerEl:HTMLElement, source:string, sourcePath:string,modified:Signal<number>) {
     super(containerEl);
     this.source = source;
     this.sourcePath = sourcePath;
     this.container = containerEl;
     this.dv_api = getAPI();
-    this.is_modified=is_modified;
+    this.is_modified=modified[0];
+    this.modified=modified[1];
+    this.visible = createSignal(true);
+  
+    this.observer = new IntersectionObserver((entries) => {
+      // entries[0] is always our calendar
+      const entry = entries[0];
+      if (entry.isIntersecting && !this.visible[0]()) {
+        //console.log(`setting visible to true`);
+        this.visible[1](true);
+      } else {
+        //console.log(`setting visible to ${entry.isIntersecting} (=entry.isIntersecting)`);
+        this.visible[1](entry.isIntersecting);
+      }
+    });
+
+    this.observer.observe(this.containerEl);
   }
   
   async onload() {
@@ -53,29 +75,28 @@ export class CalendarRenderer extends MarkdownRenderChild {
           events={[]} 
           sourcePath={this.sourcePath}
           container={this}
+          visible={this.visible[0]}
         />
       </div>
     ),this.container)
+    this.visible[1](true); // Set visible for first render
   }
 }
 
 export function Calendar(props:CalendarProps) {
   let weekStart = ()=>firstOfMonth(props.month,props.year).getDay();
   let startDate = () => new Date(props.year, props.month, 1-weekStart());
-  console.log(`startDate: ${startDate()}`);
   let dv = getAPI();
-  
   let lastversion = -1;
+  let eventscache:Event[] = [];
   let events = createMemo(() => {
     // matching strategy: I want to keep a set of active events, always sorted by their start date. 
     // For each day in the month, I will output *all* of the active events in order, then remove
     // any events that expire that day. All I need to do is sort the array by start date, then remove 
     // items from the list as they expire on the output side.
     let sorted:Event[] = [];
-    if(lastversion < props.modified()){
+    if(props.visible() && lastversion < props.modified()) {
       lastversion = props.modified();
-      console.log(`VaultCalendar: Reloading events... version ${props.modified()}`);
-
       dv.pages().file.tasks
         .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
         .forEach((t:any,_i:number) => {
@@ -90,8 +111,9 @@ export function Calendar(props:CalendarProps) {
           } 
         });
       sorted.sort((a,b)=>a.when.begins().valueOf()-b.when.begins().valueOf());
+      eventscache = sorted;
     }
-    return sorted;
+    return eventscache;
   });
  
   // This should be updated whenever events is updated. It returns a map with
@@ -104,13 +126,9 @@ export function Calendar(props:CalendarProps) {
     let all_events = events().filter(ev=>ev.when.overlaps(range));
     // Start with all of the spans that started before our date range
     let [active_events,remaining] = partition(all_events, ev=>ev.when.begins().valueOf()<curr_date.valueOf()); 
-    console.log(`Update evt_map: ${all_events.length} events`);
-    for(let evt of all_events){
-      console.log(`   Event starting ${evt.when.begins()}`);
-    }
+    console.log(`Update evt_map with ${all_events.length} events`);
     while(range.contains(curr_date)) {
       while(remaining.length > 0 && remaining[0].when.contains(curr_date)) {
-        console.log(`adding active event on ${remaining[0].when.begins()} - ${remaining[0].when.ends()}`);
         active_events.push(remaining.shift());
       }
       active_events = active_events.filter(e => e.when.contains(curr_date));
@@ -144,7 +162,7 @@ export function Calendar(props:CalendarProps) {
             <For each={evts}>{(evt:Event) => {
               let span = <span></span> ;
               (MarkdownRenderer as any).render((window as any).app as App, evt.display, span, props.sourcePath, props.container); 
-              return (<li class="nodecoration event" onclick={()=>navTo(evt.link)}>{span}</li>
+              return (<li class={"nodecoration event"+(evt.when.spans() > 1 ? " multiday": "")} onclick={()=>navTo(evt.link)}>{span}</li>
               )}
             }
             </For>

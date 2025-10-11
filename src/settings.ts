@@ -1,4 +1,5 @@
 export interface CalendarPluginSettings {
+  updateDelayms: number;
   startOfWeek: string;
   monthFormat: string;
   displayHead: boolean;
@@ -13,6 +14,7 @@ export interface CalendarPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: CalendarPluginSettings = {
+  updateDelayms: 3000,
   startOfWeek: '0',
   monthFormat: 'YYYY-MM',
   displayHead: true,
