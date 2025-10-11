@@ -84,7 +84,7 @@
         margin: 0;
         &.today {
           color: var(--text-normal);
-          background-color: var(--background-secondary);
+          background-color: hsl(var(--accent-h),var(--accent-s),var(--accent-l));
           border-bottom: 1px solid var(--background-modifier-border);
         }
         &:hover {

@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
 import { CalendarPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { CalendarSettingTab } from './settings-tab';
-import {Calendar} from './calendar';
+import {Calendar, CalendarRenderer} from './calendar';
 import {CalendarSwitcher} from './calendar-switcher';
 import {render} from 'solid-js/web';
 import {getAPI} from 'obsidian-dataview';
@@ -14,21 +14,13 @@ export default class CalendarPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
     this.dv_api = getAPI();
-    
+    let [is_modified,modified] = createSignal(1);
     this.addSettingTab(new CalendarSettingTab(this.app, this));
-    let today=new Date();
-    let [getter,setter] = createSignal([today.getFullYear(),today.getMonth()]);
-    let [is_modified,modified] = createSignal(0);
     
-    this.registerMarkdownCodeBlockProcessor('calendar', (source, el) => {
-      render((()=>
-        <div class="calendar-container">
-        <CalendarSwitcher switcher={[getter,setter]}/>
-        <Calendar modified={is_modified} year={getter()[0]} month={getter()[1]} events={[]}/>
-        </div>
-        ),el)
-      //el.appendChild(renderTable(source, this.settings));
+    this.registerMarkdownCodeBlockProcessor('calendar', (source, el, ctx) => {
+      ctx.addChild(new CalendarRenderer(el, source, ctx.sourcePath, is_modified));
     });
+
     this.registerEvent(this.app.metadataCache.on('resolved',(...args)=>{
       console.log(`Got the resolved event. args = ${JSON.stringify(args)}`);
       modified(is_modified()+1);

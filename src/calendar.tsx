@@ -1,15 +1,20 @@
-import { App, MarkdownRenderer, moment } from 'obsidian';
+import { App, Component, MarkdownRenderChild, MarkdownRenderer, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { Signal, createMemo, createSignal, For, Accessor, Index } from 'solid-js';
+import { render } from 'solid-js/web';
+import { CalendarSwitcher } from './calendar-switcher';
 import { parseDatePattern ,DatePattern, DateRange} from './datepattern';
 import { CalendarPluginSettings } from './settings';
 import { dateSlug,navTo,firstOfMonth,daysInMonth, partition } from './utils';
 
 export interface CalendarProps {
+  config: string,
   month: number,
   year: number,
   modified: Accessor<number>,
   events: any[],
+  sourcePath: string,
+  container: Component,
 }
 
 
@@ -17,6 +22,41 @@ export interface Event {
   when:DatePattern,
   display:string,
   link:string,
+}
+
+export class CalendarRenderer extends MarkdownRenderChild {
+  source:string
+  sourcePath:string
+  container:HTMLElement
+  dv_api: any
+  is_modified: Accessor<number>
+  
+  constructor(containerEl:HTMLElement, source:string, sourcePath:string,is_modified:Accessor<number>) {
+    super(containerEl);
+    this.source = source;
+    this.sourcePath = sourcePath;
+    this.container = containerEl;
+    this.dv_api = getAPI();
+    this.is_modified=is_modified;
+  }
+  
+  async onload() {
+    let today=new Date();
+    let [getter,setter] = createSignal([today.getFullYear(),today.getMonth()]);
+    render((()=>
+      <div class="calendar-container">
+        <CalendarSwitcher switcher={[getter,setter]}/>
+        <Calendar config={this.source} 
+          modified={this.is_modified} 
+          year={getter()[0]}
+          month={getter()[1]} 
+          events={[]} 
+          sourcePath={this.sourcePath}
+          container={this}
+        />
+      </div>
+    ),this.container)
+  }
 }
 
 export function Calendar(props:CalendarProps) {
@@ -56,17 +96,21 @@ export function Calendar(props:CalendarProps) {
  
   // This should be updated whenever events is updated. It returns a map with
   // a list of events for each date in the date range given.
-  let evt_map = (days:number = 35):{[key:string]: Event[]} => {
+  let evt_map = ():{[key:string]: Event[]} => {
     let result:{[key:string]: Event[]} = {};
     let curr_date = startDate();
+    const days=35;
     let range = new DateRange(startDate(), days);
     let all_events = events().filter(ev=>ev.when.overlaps(range));
     // Start with all of the spans that started before our date range
     let [active_events,remaining] = partition(all_events, ev=>ev.when.begins().valueOf()<curr_date.valueOf()); 
     console.log(`Update evt_map: ${all_events.length} events`);
+    for(let evt of all_events){
+      console.log(`   Event starting ${evt.when.begins()}`);
+    }
     while(range.contains(curr_date)) {
       while(remaining.length > 0 && remaining[0].when.contains(curr_date)) {
-        //console.log(`adding active event`);
+        console.log(`adding active event on ${remaining[0].when.begins()} - ${remaining[0].when.ends()}`);
         active_events.push(remaining.shift());
       }
       active_events = active_events.filter(e => e.when.contains(curr_date));
@@ -99,7 +143,7 @@ export function Calendar(props:CalendarProps) {
             <li class={`nodecoration daynum ${day == today? "today" : ""}`}>{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
             <For each={evts}>{(evt:Event) => {
               let span = <span></span> ;
-              (MarkdownRenderer as any).render((window as any).app as App, evt.display, span); 
+              (MarkdownRenderer as any).render((window as any).app as App, evt.display, span, props.sourcePath, props.container); 
               return (<li class="nodecoration event" onclick={()=>navTo(evt.link)}>{span}</li>
               )}
             }

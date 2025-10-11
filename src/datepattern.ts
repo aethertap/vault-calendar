@@ -69,8 +69,8 @@ export class DateRange implements DatePattern {
     const otherEnd=other.ends();
 
     // The range with the earliest start has to include the start of the other range
-    return (this.start.valueOf() <= other.start.valueOf() && myEnd.valueOf() > other.start.valueOf())
-    || (other.start.valueOf() <= this.start.valueOf() && otherEnd.valueOf() > this.start.valueOf())
+    return (this.start.valueOf() <= other.start.valueOf() && myEnd.valueOf() >= other.start.valueOf())
+    || (other.start.valueOf() <= this.start.valueOf() && otherEnd.valueOf() >= this.start.valueOf())
   }
   static parse(text:string): DateRange|undefined {
     let match = /(?<y1>\d\d\d\d)-(?<m1>\d\d)-(?<d1>\d\d)\s*(-|through)\s*(?<y2>\d\d\d\d)-(?<m2>\d\d)-(?<d2>\d\d)/.exec(text)
