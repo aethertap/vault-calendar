@@ -1,48 +1,8 @@
+import { parseYaml } from "obsidian";
 import { Event } from "./calendar";
+import {Option} from './option';
+import {Result} from "./result";
 
-export class Option<T> {
-  is_some: boolean
-  value:T|undefined
-  constructor(arg:T|undefined,is_some:boolean) {
-    this.is_some = is_some;
-    this.value = arg;
-  }
-  static Some<T>(arg:T):Option<T> {
-    return new Option(arg,true)
-  }
-  static None<T>():Option<T> {
-    return new Option(undefined,false);
-  }
-  andThen<U>(f:(arg:T)=>Option<U>):Option<U> {
-    if(this.is_some) {
-      return f(this.value);
-    } else {
-      return Option.None();
-    }
-  }
-  map<U>(f:(arg:T)=>U):Option<U> {
-    return this.andThen((a)=>Option.Some(f(a)))
-  }
-  unwrapOr(v:T):T {
-    if(this.is_some) {
-      return this.value;
-    } else {
-      return v;
-    }
-  }
-  unwrap():T {
-    if(this.is_some) {
-      return this.value;
-    } else {
-      throw new Error("Option: unwrap() called on a None value.")
-    }
-  }
-  iter(f:(arg:T)=>void) {
-    if(this.is_some) {
-      f(this.value)
-    }
-  }
-}
 
 abstract class Filter {
   abstract match(data:any):boolean;
@@ -114,6 +74,36 @@ export abstract class Query {
   }
   
   abstract scan(dvapi:DataView):Event[];
+
+  // this function parses any number of Query subclasses from the YAML provided
+  // and then creates a union Query that combines all of them into a single event
+  // list.
+  // 
+  // FileQuery:
+  //    root: "projects/school/to-grade"
+  //    date:
+  //      extract_key: "frontmatter.due_date"
+  //      pattern: 
+  //        - replace: "(\d\d\d\d)[-/\.](\d?\d)[-/\.](\d?\d)"
+  //          with: "$1-$2-$3"
+  //        - replace: "(\d\d)/(\d\d)/(\d\d(\d\d)?)"
+  //          with: "$3-$1-$2"
+  //    filter:
+  //      key: "frontmatter.grade"
+  //      invert: true
+  //    display:
+  //      extract_key: "frontmatter.title"
+  //
+  // rewrite=[/(#hw )/g, ""]
+  // [TaskQuery]
+  // root="projects/school/to-grade"
+  // filters=[{"completed"=false}]
+  
+  fromYaml(yml_src:string) : Result<Query,Error> {
+    let yml=parseYaml(yml_src);
+       
+    return Result.Ok(new ListQuery());
+  }
   
   withRoot(s:string):Query {
     this.scanRoot = Option.Some(s);

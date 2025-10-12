@@ -1,9 +1,7 @@
 import { Plugin } from 'obsidian';
 import { CalendarPluginSettings, DEFAULT_SETTINGS } from './settings';
 import { CalendarSettingTab } from './settings-tab';
-import {Calendar, CalendarRenderer} from './calendar';
-import {CalendarSwitcher} from './calendar-switcher';
-import {render} from 'solid-js/web';
+import {CalendarRenderer} from './calendar';
 import {getAPI} from 'obsidian-dataview';
 import { createSignal } from 'solid-js';
 
@@ -23,7 +21,7 @@ export default class CalendarPlugin extends Plugin {
       ctx.addChild(new CalendarRenderer(el, source, ctx.sourcePath, modified));
     });
 
-    this.registerEvent(this.app.metadataCache.on('resolved',(...args)=>{
+    this.registerEvent(this.app.metadataCache.on('dataview:index-ready' as any,(...args)=>{
       console.log(`Got the resolved event. args = ${JSON.stringify(args)}`);
       if(timeoutHandle > 0){
         window.clearTimeout(timeoutHandle);
