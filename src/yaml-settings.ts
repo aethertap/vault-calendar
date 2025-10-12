@@ -1,5 +1,36 @@
-import { Event, DatePattern } from './calendar';
+import { Event } from './calendar';
 import { parseDatePattern } from './datepattern';
+import {Query,FileQuery,ListQuery,TaskQuery} from './query';
+
+// This file contains functions to parse event extractors
+// for various kinds of queries. The syntax of the settings block
+// is YAML, and it is structured as in the example below:
+//
+// queries:
+//    - FileQuery:
+//        when:
+//          - match: "\d\d\d\d-\d\d-\d\d"
+//          - match: "(\d\d)/(\d\d)/(\d\d\d\d)"
+//            replace: "$3-$1-$2"
+//        root: "projects/school/grading"
+//        display:
+//          extract: ["frontmatter.title", "name"]
+//            - match: "#hw"
+//              replace: ""
+//            - match: "\s*DUE DATE\s*"
+//              replace: ""
+//    - TaskQuery:
+//        completed: false
+//        when:
+//          - match: "\d\d\d\d-\d\d-\d\d"
+//          - match: "(\d\d)/(\d\d)/(\d\d\d\d)"
+//            replace: "$3-$1-$2"
+//        root: "projects/school/grading"
+//        display:
+//          extract: "text"
+//            - match: "#hw"
+//            - replace: ""
+
 
 export interface TextReplacement {
   pattern: RegExp;
