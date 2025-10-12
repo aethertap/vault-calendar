@@ -55,15 +55,20 @@ export interface EventExtractorConfig {
   
   // How to extract the link from matched text
   linkPattern?: RegExp;
+  
+  // List of keys to extract text from (dot-notation paths)
+  extractorKeys?: string[];
 }
 
 export class EventExtractor {
   private config: EventExtractorConfig;
   private matchRegexes: RegExp[];
+  private extractorKeys: string[];
 
   constructor(config: EventExtractorConfig) {
     this.config = config;
     this.matchRegexes = (config.matchPatterns || []).map(pattern => new RegExp(pattern, 'i'));
+    this.extractorKeys = config.extractorKeys || ['text', 'content', 'title', 'name', 'description'];
   }
 
   /**
@@ -128,13 +133,12 @@ export class EventExtractor {
     }
     
     if (searchData && typeof searchData === 'object') {
-      // For objects, look for common text properties
-      const textProps = ['text', 'content', 'title', 'name', 'description'];
       const texts: string[] = [];
       
-      for (const prop of textProps) {
-        if (prop in searchData && typeof searchData[prop] === 'string') {
-          texts.push(searchData[prop]);
+      for (const key of this.extractorKeys) {
+        const value = this.extractValueByPath(searchData, key);
+        if (typeof value === 'string') {
+          texts.push(value);
         }
       }
       
