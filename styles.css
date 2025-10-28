@@ -108,32 +108,61 @@
       width:100%;
     }
   }
-
-  div.calendar-switcher {
-    width: 100%;
+  div.calendar-header {
     display:flex;
-    flex-direction: row;
-    justify-content: stretch;
-    align-content:end;
-    text-align:center;
-    &:hover{
-      cursor:pointer;
+    width:100%;
+    flex-direction: column;
+
+    div.year-widget {
+      display:flex;
+      flex-direction:row;
+      justify-content:center;
+      span.adjust {
+        &:first {
+          text-align:right;
+        }
+        flex: 4;
+        font-weight: bold;
+        font-size: 14pt;
+        &:hover {
+          cursor:pointer;
+          background-color: var(--background-modifier-active-hover);
+        }
+      }
+      span {
+        text-align:center;
+        flex: 1;
+        font-weight: bold;
+        font-size: 14pt;
+      }
     }
-    span.active {
-      font-weight: bold;
-      color: var(--text-normal);
-      font-size: 14pt;
-      background-color: var(--background-secondary);
-      border: 1px solid var(--background-modifier-border);
-      flex:1;
-    }
-    span.hidden {
-      font-size: 12pt;
-      color: var(--text-faint);
-      font-weight: normal;
-      border:none;
-      border-bottom: 1px solid var(--background-modifier-border);
-      flex:1;
+
+    div.calendar-switcher {
+      width: 100%;
+      display:flex;
+      flex-direction: row;
+      justify-content: stretch;
+      align-content:end;
+      text-align:center;
+      &:hover{
+        cursor:pointer;
+      }
+      span.active {
+        font-weight: bold;
+        color: var(--text-normal);
+        font-size: 14pt;
+        background-color: var(--background-secondary);
+        border: 1px solid var(--background-modifier-border);
+        flex:1;
+      }
+      span.hidden {
+        font-size: 12pt;
+        color: var(--text-faint);
+        font-weight: normal;
+        border:none;
+        border-bottom: 1px solid var(--background-modifier-border);
+        flex:1;
+      }
     }
   }
 }
