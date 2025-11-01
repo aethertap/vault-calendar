@@ -12,6 +12,7 @@ export default class CalendarPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
     this.dv_api = getAPI();
+    let index_ready = false;
     let timeoutHandle = -1;
     
     let modified = createSignal(1);
@@ -21,8 +22,16 @@ export default class CalendarPlugin extends Plugin {
       ctx.addChild(new CalendarRenderer(el, source, ctx.sourcePath, modified));
     });
 
+    this.registerEvent(this.app.metadataCache.on("dataview:refresh-views" as any, (..._) => {
+      console.log("Dataview reports modified metadata");
+      if(index_ready) {
+        modified[1]((version)=>version+1);
+      }
+    }));
+    
     this.registerEvent(this.app.metadataCache.on('dataview:index-ready' as any,(...args)=>{
-      console.log(`Got the resolved event. args = ${JSON.stringify(args)}`);
+      console.log(`Got the index-ready event. args = ${JSON.stringify(args)}`);
+      index_ready = true;
       if(timeoutHandle > 0){
         window.clearTimeout(timeoutHandle);
       }

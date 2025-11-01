@@ -1,23 +1,20 @@
-import { App, Component, MarkdownRenderChild, MarkdownRenderer, moment } from 'obsidian';
+import { App, Component, MarkdownRenderChild, MarkdownRenderer} from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
-import { Signal, createMemo, createSignal, For, Accessor, Index, Setter } from 'solid-js';
+import { Signal, createMemo, createSignal, For, Accessor, Setter, createResource, Resource, ResourceReturn, } from 'solid-js';
 import { render } from 'solid-js/web';
 import { CalendarSwitcher } from './calendar-switcher';
 import { parseDatePattern ,DatePattern, DateRange} from './datepattern';
-import { CalendarPluginSettings } from './settings';
-import { dateSlug,navTo,firstOfMonth,daysInMonth, partition } from './utils';
+import { dateSlug,navTo,firstOfMonth, partition } from './utils';
 
 export interface CalendarProps {
   config: string,
   month: number,
   year: number,
   modified: Accessor<number>,
-  visible: Accessor<boolean>,
-  events: any[],
+  events: ResourceReturn<Event[]>,
   sourcePath: string,
   container: Component,
 }
-
 
 export interface Event {
   when:DatePattern,
@@ -32,10 +29,7 @@ export class CalendarRenderer extends MarkdownRenderChild {
   dv_api: any
   is_modified: Accessor<number>
   modified:Setter<number>
-  visible:Signal<boolean>
-  observer: IntersectionObserver
   hasRendered: boolean
-  lazyUpdate: Signal<number>
   
   constructor(containerEl:HTMLElement, source:string, sourcePath:string,modified:Signal<number>) {
     super(containerEl);
@@ -45,26 +39,51 @@ export class CalendarRenderer extends MarkdownRenderChild {
     this.dv_api = getAPI();
     this.is_modified=modified[0];
     this.modified=modified[1];
-    this.visible = createSignal(true);
-  
-    this.observer = new IntersectionObserver((entries) => {
-      // entries[0] is always our calendar
-      const entry = entries[0];
-      if (entry.isIntersecting && !this.visible[0]()) {
-        //console.log(`setting visible to true`);
-        this.visible[1](true);
-      } else {
-        //console.log(`setting visible to ${entry.isIntersecting} (=entry.isIntersecting)`);
-        this.visible[1](entry.isIntersecting);
-      }
-    });
-
-    this.observer.observe(this.containerEl);
-  }
+   }
   
   async onload() {
     let today=new Date();
     let [getter,setter] = createSignal([today.getFullYear(),today.getMonth()]);
+    
+    let events = createResource(this.modified,async ()=>{
+      let sorted:Event[] = [];
+      if(this.source.length > 0) {
+        let all = await this.dv_api.query(this.source);
+        for(let evt of all) {
+          let start = evt.start;
+          let end = evt.end;
+          let when = null;
+          if(start && end) {
+            new DateRange(start,end)
+          } else {
+            when = parseDatePattern(evt.text);
+          }
+          let display = all.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim();
+          sorted.push({
+            when:when,
+            display:display,
+            link:evt.key,
+          })
+        }
+      } else {
+        this.dv_api.pages().file.tasks
+          .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
+          .forEach((t:any,_i:number) => {
+            let when = parseDatePattern(t.text);
+            if(when) {
+              sorted.push({
+                when:when,
+                display: t.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim(),
+                link: t.link,
+              });
+              //console.log(`got event ${i}: ${t.text}`);
+            } 
+          });
+      }
+      sorted.sort((a,b)=> a.when.begins().valueOf() - b.when.begins().valueOf());
+      return sorted;
+    });
+    
     render((()=>
       <div class="calendar-container">
         <CalendarSwitcher switcher={[getter,setter]}/>
@@ -72,58 +91,89 @@ export class CalendarRenderer extends MarkdownRenderChild {
           modified={this.is_modified} 
           year={getter()[0]}
           month={getter()[1]} 
-          events={[]} 
+          events={events} 
           sourcePath={this.sourcePath}
           container={this}
-          visible={this.visible[0]}
         />
       </div>
     ),this.container)
-    this.visible[1](true); // Set visible for first render
   }
 }
 
 export function Calendar(props:CalendarProps) {
   let weekStart = ()=>firstOfMonth(props.month,props.year).getDay();
   let startDate = () => new Date(props.year, props.month, 1-weekStart());
-  let dv = getAPI();
   let lastversion = -1;
   let eventscache:Event[] = [];
-  let events = createMemo(() => {
+ 
+  if(!this.dv_api) {
+    this.dv_api = getAPI();
+  } 
+  
+  let events = props.events;
+
+  /*
+  createResource(async () => {
+    console.log("Updating calendar events maybe");
     // matching strategy: I want to keep a set of active events, always sorted by their start date. 
     // For each day in the month, I will output *all* of the active events in order, then remove
     // any events that expire that day. All I need to do is sort the array by start date, then remove 
     // items from the list as they expire on the output side.
     let sorted:Event[] = [];
-    if(props.visible() && lastversion < props.modified()) {
-      lastversion = props.modified();
-      dv.pages().file.tasks
-        .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
-        .forEach((t:any,_i:number) => {
-          let when = parseDatePattern(t.text);
-          if(when) {
-            sorted.push({
-              when:when,
-              display: t.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim(),
-              link: t.link,
-            });
-            //console.log(`got event ${i}: ${t.text}`);
-          } 
-        });
+    let newVersion=props.modified(); // call this outside if to ensure it gets noticed by reactive system
+    if(lastversion < newVersion) {
+      console.log("Really update events.");
+      lastversion = newVersion;
+      if(this.source.length() > 0) {
+        let all = await this.dv_api.query(this.source);
+        for(let evt of all) {
+          let start = evt.start;
+          let end = evt.end;
+          let when = null;
+          if(start && end) {
+            new DateRange(start,end)
+          } else {
+            when = parseDatePattern(evt.text);
+          }
+          let display = all.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim();
+          sorted.push({
+            when:when,
+            display:display,
+            link:evt.key,
+          })
+        }
+      } else {
+        this.dv_api.pages().file.tasks
+          .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
+          .forEach((t:any,_i:number) => {
+            let when = parseDatePattern(t.text);
+            if(when) {
+              sorted.push({
+                when:when,
+                display: t.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim(),
+                link: t.link,
+              });
+              //console.log(`got event ${i}: ${t.text}`);
+            } 
+          });
+
+      }
       sorted.sort((a,b)=>a.when.begins().valueOf()-b.when.begins().valueOf());
       eventscache = sorted;
+    } else {
+      console.log(`NOT updating. lastversion=${lastversion}, newVersion=${newVersion}`);
     }
     return eventscache;
   });
- 
+*/ 
   // This should be updated whenever events is updated. It returns a map with
   // a list of events for each date in the date range given.
-  let evt_map = ():{[key:string]: Event[]} => {
+  let evt_map = createMemo(():{[key:string]: Event[]} => {
     let result:{[key:string]: Event[]} = {};
     let curr_date = startDate();
     const days=35;
     let range = new DateRange(startDate(), days);
-    let all_events = events().filter(ev=>ev.when.overlaps(range));
+    let all_events = events.filter(ev=>ev().when.overlaps(range));
     // Start with all of the spans that started before our date range
     let [active_events,remaining] = partition(all_events, ev=>ev.when.begins().valueOf()<curr_date.valueOf()); 
     console.log(`Update evt_map with ${all_events.length} events`);
@@ -137,7 +187,7 @@ export function Calendar(props:CalendarProps) {
       curr_date.setDate(curr_date.getDate()+1);
     }
     return result;
-  }
+  })
   
   let days = ["sun","mon","tue","wed","thu","fri","sat"];
   let today = dateSlug(new Date());
