@@ -51,14 +51,14 @@ export class DateRange implements DatePattern {
   days: number
   constructor(start:DateTime,length:number=1) {
     this.start = start;
-    this.days=Math.min(1,length);
+    this.days=Math.max(1,length);
   }
   withStart(s:DateTime):DateRange {
     this.start = s;
     return this
   }
   withEnd(e:DateTime):DateRange {
-    this.days = Math.min(1, (e.valueOf() - this.start.valueOf()) / (24*3600*1000));
+    this.days = Math.max(1, (e.valueOf() - this.start.valueOf()) / (24*3600*1000));
     return this;
   }
   
