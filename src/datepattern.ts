@@ -51,14 +51,14 @@ export class DateRange implements DatePattern {
   days: number
   constructor(start:DateTime,length:number=1) {
     this.start = start;
-    this.days=length;
+    this.days=Math.min(1,length);
   }
   withStart(s:DateTime):DateRange {
     this.start = s;
     return this
   }
   withEnd(e:DateTime):DateRange {
-    this.days = (e.valueOf() - this.start.valueOf()) / (24*3600*1000);
+    this.days = Math.min(1, (e.valueOf() - this.start.valueOf()) / (24*3600*1000));
     return this;
   }
   
@@ -74,7 +74,9 @@ export class DateRange implements DatePattern {
   }
   contains(target:DateTime) : boolean {
     let end = this.ends();
-    return target.valueOf() >= this.start.valueOf() && target.valueOf() <= end.valueOf();
+    let result = target.valueOf() >= this.start.valueOf() && target.valueOf() <= end.valueOf();
+    console.log(`${JSON.stringify(this)}.contains(${JSON.stringify(target)}): ${result}`);
+    return result;
   }
   // returns true if this date range has any days in common with the other
   overlaps(other:DateRange) : boolean {
@@ -84,7 +86,7 @@ export class DateRange implements DatePattern {
     // The range with the earliest start has to include the start of the other range
     let result =  (this.start.valueOf() <= other.start.valueOf() && myEnd.valueOf() >= other.start.valueOf())
     || (other.start.valueOf() <= this.start.valueOf() && otherEnd.valueOf() >= this.start.valueOf());
-    console.log(`Range ${JSON.stringify(this)} overlaps ${JSON.stringify(other)}: ${result}`);
+    //console.log(`Range ${JSON.stringify(this)} overlaps ${JSON.stringify(other)}: ${result}`);
     return result;
   }
   static parse(text:string): DateRange|undefined {

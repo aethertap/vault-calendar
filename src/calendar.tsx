@@ -157,7 +157,8 @@ export function Calendar(props:CalendarProps) {
     });
     // Start with all of the spans that started before our date range
     let [active_events, remaining] = partition(all_events, ev => ev.when.begins().valueOf() < curr_date.valueOf());
-    console.log(`Update evt_map with ${all_events.length} events`);
+    console.log(`Update evt_map with ${all_events.length} events (active: ${active_events.length}, remaining: ${remaining.length})`);
+    
     while (range.contains(curr_date)) {
       while (remaining.length > 0 && remaining[0].when.contains(curr_date)) {
         active_events.push(remaining.shift());
