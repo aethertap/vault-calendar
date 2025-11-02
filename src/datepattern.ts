@@ -1,3 +1,4 @@
+import { DateTime } from "obsidian-dataview";
 import { MS_PER_DAY } from "./utils";
 
 export interface DatePattern {
@@ -10,8 +11,12 @@ export interface DatePattern {
 
 export class SimpleDate implements DatePattern {
   date: Date
-  constructor(date:Date) {
-    this.date = date;
+  constructor(date:any) {
+    if(date.toJSDate) {
+      this.date = date.toJSDate();
+    } else {
+      this.date = date;
+    }
   }
   contains(target:Date):boolean {
     return target.getDate() == this.date.getDate() 
@@ -48,6 +53,15 @@ export class DateRange implements DatePattern {
     this.start = start;
     this.days=length;
   }
+  withStart(s:Date):DateRange {
+    this.start = s;
+    return this
+  }
+  withEnd(e:Date):DateRange {
+    this.days = (e.valueOf() - this.start.valueOf()) / (24*3600*1000);
+    return this;
+  }
+  
   begins():Date{
     return this.start
   }

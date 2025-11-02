@@ -11,6 +11,9 @@ importers:
       '@babel/core':
         specifier: ^7.28.3
         version: 7.28.3
+      luxon:
+        specifier: ^3.7.2
+        version: 3.7.2
       solid-js:
         specifier: ^1.9.9
         version: 1.9.9
@@ -1699,9 +1702,9 @@ packages:
       '@codemirror/state': ^6.0.0
       '@codemirror/view': ^6.0.0
 
-  obsidian@https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/3a2161f440361a0c5466d5ebc4569998933e665b:
-    resolution: {tarball: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/3a2161f440361a0c5466d5ebc4569998933e665b}
-    version: 1.10.0
+  obsidian@https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/86b356e5f11fa5365148697113568fada0d3ef0f:
+    resolution: {tarball: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/86b356e5f11fa5365148697113568fada0d3ef0f}
+    version: 1.10.2-1
     peerDependencies:
       '@codemirror/state': 6.5.0
       '@codemirror/view': 6.38.1
@@ -4189,7 +4192,7 @@ snapshots:
 
   obsidian-daily-notes-interface@0.8.4(@codemirror/state@6.5.2)(@codemirror/view@6.38.1):
     dependencies:
-      obsidian: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/3a2161f440361a0c5466d5ebc4569998933e665b(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
+      obsidian: https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/86b356e5f11fa5365148697113568fada0d3ef0f(@codemirror/state@6.5.2)(@codemirror/view@6.38.1)
       tslib: 2.1.0
     transitivePeerDependencies:
       - '@codemirror/state'
@@ -4216,7 +4219,7 @@ snapshots:
       '@types/codemirror': 5.60.8
       moment: 2.29.4
 
-  obsidian@https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/3a2161f440361a0c5466d5ebc4569998933e665b(@codemirror/state@6.5.2)(@codemirror/view@6.38.1):
+  obsidian@https://codeload.github.com/obsidianmd/obsidian-api/tar.gz/86b356e5f11fa5365148697113568fada0d3ef0f(@codemirror/state@6.5.2)(@codemirror/view@6.38.1):
     dependencies:
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.38.1
