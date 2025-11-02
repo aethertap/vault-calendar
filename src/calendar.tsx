@@ -64,7 +64,7 @@ export class CalendarRenderer extends MarkdownRenderChild {
 }
 
 export function Calendar(props:CalendarProps) {
-  let weekStart = ()=>firstOfMonth(props.month,props.year).day;
+  let weekStart = ()=>firstOfMonth(props.month,props.year).weekday;
   let startDate= () => DateTime.local(props.year, props.month, 1).minus(Duration.fromObject({days:weekStart()}));
  
   if(!this.dv_api) {

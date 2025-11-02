@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 import { App } from "obsidian";
 
 export const MS_PER_DAY=1000*60*60*24;
@@ -21,7 +21,7 @@ export function firstOfMonth(month:number, year: number): DateTime {
 }
 
 export function daysInMonth(month:number, year:number): number {
-  return DateTime.local(year,month+1,-1).day
+  return DateTime.local(year,month+1,1).minus(Duration.fromObject({days:1})).day;
 }
 
 // Return the date whose day number is greater than the initial value by `days`. If you're using this in 
