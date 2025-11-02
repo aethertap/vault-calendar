@@ -2,14 +2,32 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import CalendarPlugin from './main';
 import { DEFAULT_SETTINGS } from './settings';
 
+/**
+ * Settings tab for the calendar plugin.
+ * Provides UI controls for customizing calendar appearance and behavior.
+ * Accessible through Obsidian's settings panel under plugin settings.
+ */
 export class CalendarSettingTab extends PluginSettingTab {
+  /** Reference to the calendar plugin instance */
   plugin: CalendarPlugin;
 
+  /**
+   * Creates a new settings tab for the calendar plugin.
+   *
+   * @param app - The Obsidian app instance
+   * @param plugin - The calendar plugin instance
+   */
   constructor(app: App, plugin: CalendarPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
+  /**
+   * Renders the settings UI.
+   * Creates controls for all calendar configuration options including
+   * week start day, day labels, display options, and formatting.
+   * Called by Obsidian when the settings tab is opened.
+   */
   display(): void {
     const {containerEl} = this;
 
