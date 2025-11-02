@@ -5,6 +5,7 @@ import { render } from 'solid-js/web';
 import { CalendarSwitcher } from './calendar-switcher';
 import { parseDatePattern ,DatePattern, DateRange} from './datepattern';
 import { dateSlug,navTo,firstOfMonth, partition } from './utils';
+import { DateTime, Duration } from 'luxon';
 
 export interface CalendarProps {
   config: string,
@@ -42,8 +43,8 @@ export class CalendarRenderer extends MarkdownRenderChild {
    }
   
   async onload() {
-    let today=new Date();
-    let [getter,setter] = createSignal([today.getFullYear(),today.getMonth()]);
+    let today=DateTime.local();
+    let [getter,setter] = createSignal([today.year,today.month]);
     
    
     render((()=>
@@ -63,19 +64,13 @@ export class CalendarRenderer extends MarkdownRenderChild {
 }
 
 export function Calendar(props:CalendarProps) {
-  let weekStart = ()=>firstOfMonth(props.month,props.year).getDay();
-  let startDate = () => new Date(props.year, props.month, 1-weekStart());
+  let weekStart = ()=>firstOfMonth(props.month,props.year).day;
+  let startDate= () => DateTime.local(props.year, props.month, 1).minus(Duration.fromObject({days:weekStart()}));
  
   if(!this.dv_api) {
     this.dv_api = getAPI();
   } 
  
-  let dateWindow = ()=>{
-    let start = new Date(props.year,props.month,1);
-    let end = new Date(props.year,props.month+1);
-    return new DateRange(start,1).withEnd(end);
-  }
-  
   let [events,_handle] = createResource(props.modified, async ()=>{
     console.log(`fetching events resource, version=${props.modified()}`);
     console.log(`source is ${props.dv_source}`);
@@ -86,33 +81,47 @@ export function Calendar(props:CalendarProps) {
       console.log(`dataview returned `,all);
       if(!all.successful){
         console.log(`error was: ${all.error}`) ;
+        return [];
       }else{
         console.log(`********** got ${all.value.values.length} events`)
       }
       for(let evt of all.value.values) {
-        console.log(`the evt is: ${JSON.stringify(evt)}`);
-        let start = evt.value.start;
-        let end = evt.value.end;
+        //console.log(`the evt is: ${JSON.stringify(evt)}`);
         let when:DatePattern = null;
-        if(start) {
-          let rwhen = new DateRange(start,1);
-          if(end){
-            rwhen.withEnd(end);
+        let display:string = evt.text;
+        let link:any = evt.key;
+        if(evt.value){ // this will be set if the user has specified an object as the output 
+          let start = evt.value.start;
+          let end = evt.value.end;
+          if(start) {
+            let rwhen = new DateRange(start,1);
+            if(end){
+              rwhen.withEnd(end);
+            }
+            when = rwhen;
+          } 
+          if(evt.value.link){
+            link = evt.value.link;
           }
-          when = rwhen;
+          if(evt.value.display){
+            display=evt.value.display;
+          }
         } else {
-          when = parseDatePattern(evt.value.text);
+          when = parseDatePattern(evt.text);
+        }
+        if(!when) {
+          when = parseDatePattern(evt.text);
         }
         if(when) {
-          let display = evt.value.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim();
+          display = display.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim();
           sorted.push({
             when:when,
             display:display,
-            link:evt.key,
+            link:evt.key||evt.link,
           })
         }
       }
-    } else {
+    } else { // no source provided, do the default behavior and search for uncompleted tasks
       (await this.dv_api.pages()).file.tasks
         .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
         .forEach((t:any,_i:number) => {
@@ -123,13 +132,14 @@ export function Calendar(props:CalendarProps) {
               display: t.text.replaceAll(/\[?\[?\d\d\d\d-\d\d-\d\d\]?\]?/g,'').trim(),
               link: t.link,
             });
-          } 
+          }
         });
     }
     sorted.sort((a,b)=> a.when.begins().valueOf() - b.when.begins().valueOf());
+    console.log(`Returning ${sorted.length} events from createResource`);
     return sorted;
   });
-  
+
   // This should be updated whenever the date range is updated. It returns a map with
   // a list of events for each date in the date range given.
   let evt_map = (): { [key: string]: Event[] } => {
@@ -140,8 +150,9 @@ export function Calendar(props:CalendarProps) {
     let curr_date = startDate();
     const days = 35;
     let range = new DateRange(startDate(), days);
+    console.log(`Checking events in date range ${JSON.stringify(range)}`)
     let all_events = events().filter(ev => {
-      console.log(`Event is: ${JSON.stringify(ev)}`);
+      //console.log(`Event is: ${JSON.stringify(ev)}`);
       return ev.when.overlaps(range)
     });
     // Start with all of the spans that started before our date range
@@ -154,13 +165,14 @@ export function Calendar(props:CalendarProps) {
       active_events = active_events.filter(e => e.when.contains(curr_date));
       //console.log(`Pushing ${active_events.length} events on ${dateSlug(curr_date)}`);
       result[dateSlug(curr_date)] = [...active_events];
-      curr_date.setDate(curr_date.getDate() + 1);
+      curr_date = curr_date.plus(Duration.fromObject({days:1}));
+      console.log(`Advance date to ${curr_date}`);
     }
     return result;
   }
   
   let days = ["sun","mon","tue","wed","thu","fri","sat"];
-  let today = dateSlug(new Date());
+  let today = dateSlug(DateTime.local());
   return (
     <Show when={evt_map()} fallback={<p>Loading events...</p>}>{
       (mapped)=>{

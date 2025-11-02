@@ -1,35 +1,35 @@
-import { DateTime } from "obsidian-dataview";
+import { DateTime, Duration} from "luxon";
 import { MS_PER_DAY } from "./utils";
 
 export interface DatePattern {
-  contains(_date:Date):boolean ;
+  contains(_date:DateTime):boolean ;
   overlaps(_range: DateRange):boolean;
-  begins():Date;
-  ends():Date;
+  begins():DateTime;
+  ends():DateTime;
   spans():number;
 }
 
 export class SimpleDate implements DatePattern {
-  date: Date
+  date: DateTime
   constructor(date:any) {
-    if(date.toJSDate) {
-      this.date = date.toJSDate();
+    if(date.toJSDateTime) {
+      this.date = date.toJSDateTime();
     } else {
       this.date = date;
     }
   }
-  contains(target:Date):boolean {
-    return target.getDate() == this.date.getDate() 
-      && target.getMonth() == this.date.getMonth() 
-      && target.getFullYear() == this.date.getFullYear();
+  contains(target:DateTime):boolean {
+    return target.day == this.date.day
+      && target.month == this.date.month 
+      && target.year == this.date.year;
   }
   overlaps(range:DateRange): boolean {
     return range.contains(this.date)
   }
-  begins():Date {
+  begins():DateTime {
     return this.date;
   }
-  ends():Date{
+  ends():DateTime{
     return this.date;
   }
   spans():number{
@@ -39,7 +39,7 @@ export class SimpleDate implements DatePattern {
     let match = /(?<y>\d\d\d\d)-(?<m>\d\d)-(?<d>\d\d)/.exec(text);
     if(match) {
       let {y,m,d} = match.groups;
-      return new SimpleDate(new Date(parseInt(y),parseInt(m)-1,parseInt(d)));
+      return new SimpleDate(DateTime.local(parseInt(y),parseInt(m),parseInt(d)));
     }
   }
 }
@@ -47,33 +47,32 @@ export class SimpleDate implements DatePattern {
 // A date range. The number of days **includes** the start date, so if days is 1, then this range
 // is equivalent to a SimpleDate. 
 export class DateRange implements DatePattern {
-  start: Date
+  start: DateTime
   days: number
-  constructor(start:Date,length:number) {
+  constructor(start:DateTime,length:number=1) {
     this.start = start;
     this.days=length;
   }
-  withStart(s:Date):DateRange {
+  withStart(s:DateTime):DateRange {
     this.start = s;
     return this
   }
-  withEnd(e:Date):DateRange {
+  withEnd(e:DateTime):DateRange {
     this.days = (e.valueOf() - this.start.valueOf()) / (24*3600*1000);
     return this;
   }
   
-  begins():Date{
+  begins():DateTime{
     return this.start
   }
-  ends():Date{
-    let d = new Date(this.start);
-    d.setDate(this.start.getDate()+this.days - 1);
+  ends():DateTime{
+    let d = this.start.plus(Duration.fromObject({days:this.days-1}));
     return d;
   }
   spans():number{
     return this.days;
   }
-  contains(target:Date) : boolean {
+  contains(target:DateTime) : boolean {
     let end = this.ends();
     return target.valueOf() >= this.start.valueOf() && target.valueOf() <= end.valueOf();
   }
@@ -83,8 +82,10 @@ export class DateRange implements DatePattern {
     const otherEnd=other.ends();
 
     // The range with the earliest start has to include the start of the other range
-    return (this.start.valueOf() <= other.start.valueOf() && myEnd.valueOf() >= other.start.valueOf())
-    || (other.start.valueOf() <= this.start.valueOf() && otherEnd.valueOf() >= this.start.valueOf())
+    let result =  (this.start.valueOf() <= other.start.valueOf() && myEnd.valueOf() >= other.start.valueOf())
+    || (other.start.valueOf() <= this.start.valueOf() && otherEnd.valueOf() >= this.start.valueOf());
+    console.log(`Range ${JSON.stringify(this)} overlaps ${JSON.stringify(other)}: ${result}`);
+    return result;
   }
   static parse(text:string): DateRange|undefined {
     let match = /(?<y1>\d\d\d\d)-(?<m1>\d\d)-(?<d1>\d\d)\s*(-|through)\s*(?<y2>\d\d\d\d)-(?<m2>\d\d)-(?<d2>\d\d)/.exec(text)
@@ -93,8 +94,8 @@ export class DateRange implements DatePattern {
         y1,m1,d1,
         y2,m2,d2
       } = match.groups;
-      let start = new Date(parseInt(y1),parseInt(m1)-1,parseInt(d1));
-      let end = new Date(parseInt(y2),parseInt(m2)-1,parseInt(d2));
+      let start = DateTime.local(parseInt(y1),parseInt(m1),parseInt(d1));
+      let end = DateTime.local(parseInt(y2),parseInt(m2),parseInt(d2));
       let days:number = Math.round((end.valueOf() - start.valueOf()) / MS_PER_DAY+1);
       if(days < 1) {
         return undefined;
