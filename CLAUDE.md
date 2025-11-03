@@ -10,27 +10,32 @@ This is an Obsidian plugin that displays calendar views of events extracted from
 
 ```bash
 # Development mode (watch mode with inline sourcemaps)
-npm run dev
+pnpm dev
 
 # Production build (runs type check first, then bundles without sourcemaps)
-npm run build
+pnpm build
 
 # Run tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm run test:watch
+pnpm test:watch
+
+# Run tests with Vitest UI
+pnpm test:ui
 
 # Generate documentation (outputs to docs/ folder)
-npm run docs
+pnpm docs
 ```
 
 ## Testing
 
 - Tests are located in `src/__tests__/`
 - Test files use `.test.ts` or `.spec.ts` extensions
-- Jest is configured with jsdom environment for DOM testing
-- To run a single test file: `npm test -- <filename>`
+- **Vitest** is used as the test runner with jsdom environment for DOM testing
+- Vitest works better with SolidJS than Jest
+- To run a single test file: `pnpm test -- <filename>`
+- Test and mock directories (`src/__tests__/` and `src/__mocks__/`) are excluded from the TypeScript build via `tsconfig.json`
 
 ## Architecture
 
@@ -72,7 +77,12 @@ The codebase uses Rust-inspired error handling patterns:
   - Use `.map()`, `.andThen()`, `.orElse()` for error propagation
   - Prefer `.unwrapOr(default)` over `.unwrap()` to avoid exceptions
 
-Note: The Option and Result types are currently defined but not widely used in the codebase yet. When refactoring code that handles nullable values or errors, prefer using these types.
+**IMPORTANT - SolidJS Reactivity Caveat:**
+When using Result with SolidJS reactive primitives (signals, resources, memos), be careful with monadic transformers (`.map()`, `.andThen()`, `.orElse()`) in the render phase. These methods create closures that can break SolidJS's reactivity tracking. If you wrap resource data in a Result and use these transformers in the JSX render, reactivity may be lost and the UI will not update when the underlying data changes.
+
+**Recommendation:** When working with reactive data sources (like `createResource`), prefer unwrapping Result values directly and handling Ok/Err cases explicitly in the render, rather than chaining Result transformers. This maintains proper reactivity tracking.
+
+Note: The Option and Result types are currently defined but not widely used in the codebase yet. When refactoring code that handles nullable values or errors, prefer using these types, but be mindful of the reactivity considerations above when using them with SolidJS.
 
 ### Key Dependencies
 

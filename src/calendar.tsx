@@ -145,7 +145,7 @@ export function Calendar(props:CalendarProps) {
 
   // This should be updated whenever the date range is updated. It returns a map with
   // a list of events for each date in the date range given.
-  let evt_map = (): Result<{ [key: string]: Event[] }, string> => {
+  let evt_map = createMemo((): Result<{ [key: string]: Event[] }, string> => {
     const eventsResult = events();
     if(!eventsResult){
       return undefined; // This is a signal to the Show component, and has to be this way
@@ -177,7 +177,7 @@ export function Calendar(props:CalendarProps) {
       console.log(`Advance date to ${curr_date}`);
     }
     return Result.Ok(result);
-  }
+  });
   
   let days = ["sun","mon","tue","wed","thu","fri","sat"];
   let today = dateSlug(DateTime.local());
@@ -186,8 +186,8 @@ export function Calendar(props:CalendarProps) {
   return (
     <Show when={evt_map()} fallback={<p>Loading events...</p>}>
       {(result) => {
-        return result().map((mapped)=>{
-          return (
+        if(result().is_ok) {
+        return (
           <div class="vault-calendar">
             <div class="header">Sun</div>
             <div class="header">Mon</div>
@@ -196,8 +196,9 @@ export function Calendar(props:CalendarProps) {
             <div class="header">Thu</div>
             <div class="header">Fri</div>
             <div class="header">Sat</div>
-            <For each={Object.entries(mapped)}>{([day,evts],i:Accessor<number>)=> {
+            <For each={Object.entries(result().value)}>{([day,evts],i:Accessor<number>)=> {
               let bgclass="";
+              console.log(`rendering a day (${day}): ${evts.length} events`);
               if(evts.length<1) {
                 bgclass="empty";
               }
@@ -218,12 +219,11 @@ export function Calendar(props:CalendarProps) {
             </For>
           </div>
         )
-        })
-        .orElse((errmsg:string)=>{
-            return Result.Ok(<div class="calendar-error">
-              <pre>{errmsg}</pre>
+       } else {
+          return (<div class="calendar-error">
+              <pre>{result().err}</pre>
             </div>)
-        }).unwrap()
+        }
       }
     }
     </Show>
