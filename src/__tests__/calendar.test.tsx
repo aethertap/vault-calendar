@@ -119,8 +119,8 @@ describe('Calendar Component', () => {
         value: {
           values: [
             createMockEvent('Original text', null, {
-              start: '2025-03-20',
-              end: '2025-03-22',
+              start: DateTime.fromISO('2025-03-20'),
+              end: DateTime.fromISO('2025-03-22'),
               display: 'Custom Display Text',
               link: 'custom/path.md'
             })
@@ -142,8 +142,10 @@ describe('Calendar Component', () => {
         />
       );
 
+      // Event spans 3 days (March 20-22), so it should appear 3 times
       await waitFor(() => {
-        expect(screen.getByText(/Custom Display Text/)).toBeInTheDocument();
+        const elements = screen.getAllByText(/Custom Display Text/);
+        expect(elements).toHaveLength(3);
       });
     });
 

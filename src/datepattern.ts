@@ -178,7 +178,7 @@ export class DateRange implements DatePattern {
    * @returns This DateRange for method chaining
    */
   withEnd(e:DateTime):DateRange {
-    this.days = Math.max(1, (e.valueOf() - this.start.valueOf()) / (24*3600*1000));
+    this.days = Math.max(1, Math.round((e.valueOf() - this.start.valueOf()) / MS_PER_DAY + 1));
     return this;
   }
 
