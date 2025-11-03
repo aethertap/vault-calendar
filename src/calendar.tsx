@@ -144,6 +144,9 @@ export function Calendar(props:CalendarProps) {
   // a list of events for each date in the date range given.
   let evt_map = (): Result<{ [key: string]: Event[] }, string> => {
     const eventsResult = events();
+    if(!eventsResult){
+      return undefined; // This is a signal to the Show component, and has to be this way
+    }
     if(!eventsResult.is_ok){
       return Result.Err(eventsResult.err);
     }
