@@ -71,7 +71,11 @@ export function Calendar(props:CalendarProps) {
   if(!this.dv_api) {
     this.dv_api = getAPI();
   } 
- 
+
+  // Note: in SolidJS, resources return `undefined` before their first fulfillment. This
+  // doesn't appear in the function signature here, but it's crucial for reactivity
+  // so in evt_map below, it must check for undefined and pass it along to the output
+  // as a signal for Solid. Otherwise, the Result works as planned.
   let [events,_handle] = createResource(props.modified, async (): Promise<Result<Event[], string>>=>{
     console.log(`fetching events resource, version=${props.modified()}`);
     console.log(`source is ${props.dv_source}`);
