@@ -6,6 +6,7 @@ import { CalendarSwitcher } from './calendar-switcher';
 import { parseDatePattern ,DatePattern, DateRange} from './datepattern';
 import { dateSlug,navTo,firstOfMonth, partition } from './utils';
 import { DateTime, Duration } from 'luxon';
+import { Result } from './result';
 
 export interface CalendarProps {
   config: string,
@@ -71,17 +72,16 @@ export function Calendar(props:CalendarProps) {
     this.dv_api = getAPI();
   } 
  
-  let [events,_handle] = createResource(props.modified, async ()=>{
+  let [events,_handle] = createResource(props.modified, async (): Promise<Result<Event[], string>>=>{
     console.log(`fetching events resource, version=${props.modified()}`);
     console.log(`source is ${props.dv_source}`);
 
     let sorted:Event[] = [];
     if(props.dv_source.length > 0) {
       let all = await this.dv_api.query(props.dv_source);
-      console.log(`dataview returned `,all);
       if(!all.successful){
         console.log(`error was: ${all.error}`) ;
-        return [];
+        return Result.Err(all.error);
       }else{
         console.log(`********** got ${all.value.values.length} events`)
       }
@@ -137,28 +137,29 @@ export function Calendar(props:CalendarProps) {
     }
     sorted.sort((a,b)=> a.when.begins().valueOf() - b.when.begins().valueOf());
     console.log(`Returning ${sorted.length} events from createResource`);
-    return sorted;
+    return Result.Ok(sorted);
   });
 
   // This should be updated whenever the date range is updated. It returns a map with
   // a list of events for each date in the date range given.
-  let evt_map = (): { [key: string]: Event[] } => {
-    if(!events()){
-      return {};
+  let evt_map = (): Result<{ [key: string]: Event[] }, string> => {
+    const eventsResult = events();
+    if(!eventsResult.is_ok){
+      return Result.Err(eventsResult.err);
     }
     let result: { [key: string]: Event[] } = {};
     let curr_date = startDate();
     const days = 35;
     let range = new DateRange(startDate(), days);
     console.log(`Checking events in date range ${JSON.stringify(range)}`)
-    let all_events = events().filter(ev => {
+    let all_events = eventsResult.value.filter(ev => {
       //console.log(`Event is: ${JSON.stringify(ev)}`);
       return ev.when.overlaps(range)
     });
     // Start with all of the spans that started before our date range
     let [active_events, remaining] = partition(all_events, ev => ev.when.begins().valueOf() < curr_date.valueOf());
     console.log(`Update evt_map with ${all_events.length} events (active: ${active_events.length}, remaining: ${remaining.length})`);
-    
+
     while (range.contains(curr_date)) {
       while (remaining.length > 0 && remaining[0].when.contains(curr_date)) {
         active_events.push(remaining.shift());
@@ -169,15 +170,18 @@ export function Calendar(props:CalendarProps) {
       curr_date = curr_date.plus(Duration.fromObject({days:1}));
       console.log(`Advance date to ${curr_date}`);
     }
-    return result;
+    return Result.Ok(result);
   }
   
   let days = ["sun","mon","tue","wed","thu","fri","sat"];
   let today = dateSlug(DateTime.local());
+
+
   return (
-    <Show when={evt_map()} fallback={<p>Loading events...</p>}>{
-      (mapped)=>{
-        return (
+    <Show when={evt_map()} fallback={<p>Loading events...</p>}>
+      {(result) => {
+        return result().map((mapped)=>{
+          return (
           <div class="vault-calendar">
             <div class="header">Sun</div>
             <div class="header">Mon</div>
@@ -186,7 +190,7 @@ export function Calendar(props:CalendarProps) {
             <div class="header">Thu</div>
             <div class="header">Fri</div>
             <div class="header">Sat</div>
-            <For each={Object.entries(mapped())}>{([day,evts],i:Accessor<number>)=> {
+            <For each={Object.entries(mapped)}>{([day,evts],i:Accessor<number>)=> {
               let bgclass="";
               if(evts.length<1) {
                 bgclass="empty";
@@ -197,7 +201,7 @@ export function Calendar(props:CalendarProps) {
                   <li class={`nodecoration daynum ${day == today? "today" : ""}`}>{day.match(/\d\d\d\d-\d\d-0?(\d+)/)[1]}</li>
                   <For each={evts}>{(evt:Event) => {
                     let span = <span></span> ;
-                    (MarkdownRenderer as any).render((window as any).app as App, evt.display, span, props.sourcePath, props.container); 
+                    (MarkdownRenderer as any).render((window as any).app as App, evt.display, span, props.sourcePath, props.container);
                     return (<li class={"nodecoration event"+(evt.when.spans() > 1 ? " multiday": "")} onclick={()=>navTo(evt.link)}>{span}</li>
                     )}
                   }
@@ -205,12 +209,18 @@ export function Calendar(props:CalendarProps) {
                 </ul>
               </div>
             }}
-            </For> 
+            </For>
           </div>
         )
+        })
+        .orElse((errmsg:string)=>{
+            return Result.Ok(<div class="calendar-error">
+              <pre>{errmsg}</pre>
+            </div>)
+        }).unwrap()
       }
     }
-   </Show>
+    </Show>
   )
 }
 

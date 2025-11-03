@@ -78,11 +78,11 @@ export class Result<T,E> {
    * @param f - Function that provides an alternative Result
    * @returns This Result if Ok, otherwise the result of calling f
    */
-  orElse(f:()=>Result<T,E>):Result<T,E> {
+  orElse(f:(e:E)=>Result<T,E>):Result<T,E> {
     if(this.is_ok) {
       return this;
     } else {
-      return f()
+      return f(this.err)
     }
   }
 
