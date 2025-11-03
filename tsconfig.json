@@ -20,8 +20,13 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/renderer.tsx",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts"
+    "src/renderer.tsx"
+  ],
+  "exclude": [
+    "src/__tests__",
+    "src/__mocks__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts"
   ]
 }

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Result } from '../result';
 
 describe('Result', () => {
@@ -68,7 +69,7 @@ describe('Result', () => {
     });
 
     it('should not call function on Err', () => {
-      const mockFn = jest.fn(x => x * 2);
+      const mockFn = vi.fn(x => x * 2);
       const result = Result.Err<number, string>('error');
       const mapped = result.map(mockFn);
 
@@ -111,7 +112,7 @@ describe('Result', () => {
     });
 
     it('should not call function on Err', () => {
-      const mockFn = jest.fn((x: number) => Result.Ok<number, string>(x * 2));
+      const mockFn = vi.fn((x: number) => Result.Ok<number, string>(x * 2));
       const result = Result.Err<number, string>('error');
       const chained = result.andThen(mockFn);
 
@@ -132,7 +133,7 @@ describe('Result', () => {
     });
 
     it('should short-circuit on Err in chain', () => {
-      const mockFn = jest.fn((x: number) => Result.Ok<number, string>(x * 2));
+      const mockFn = vi.fn((x: number) => Result.Ok<number, string>(x * 2));
       const result = Result.Ok<number, string>(3);
       const chained = result
         .andThen((x: number) => x > 5 ? Result.Ok<number, string>(x) : Result.Err<number, string>('too small'))
@@ -160,7 +161,7 @@ describe('Result', () => {
     });
 
     it('should not call function on Ok', () => {
-      const mockFn = jest.fn(() => Result.Ok<number, string>(0));
+      const mockFn = vi.fn(() => Result.Ok<number, string>(0));
       const result = Result.Ok<number, string>(42);
       result.orElse(mockFn);
 
@@ -250,7 +251,7 @@ describe('Result', () => {
 
   describe('iter', () => {
     it('should call function with Ok value', () => {
-      const mockFn = jest.fn();
+      const mockFn = vi.fn();
       const result = Result.Ok<number, string>(42);
       result.iter(mockFn);
 
@@ -259,7 +260,7 @@ describe('Result', () => {
     });
 
     it('should not call function on Err', () => {
-      const mockFn = jest.fn();
+      const mockFn = vi.fn();
       const result = Result.Err<number, string>('error');
       result.iter(mockFn);
 

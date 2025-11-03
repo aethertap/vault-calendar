@@ -16,6 +16,7 @@ export interface CalendarProps {
   modified: Accessor<number>,
   sourcePath: string,
   container: Component,
+  dv_api?: any,
 }
 
 export interface Event {
@@ -67,10 +68,8 @@ export class CalendarRenderer extends MarkdownRenderChild {
 export function Calendar(props:CalendarProps) {
   let weekStart = ()=>firstOfMonth(props.month,props.year).weekday;
   let startDate= () => DateTime.local(props.year, props.month, 1).minus(Duration.fromObject({days:weekStart()}));
- 
-  if(!this.dv_api) {
-    this.dv_api = getAPI();
-  } 
+
+  const dv_api = props.dv_api || (props.container as CalendarRenderer)?.dv_api || getAPI(); 
 
   // Note: in SolidJS, resources return `undefined` before their first fulfillment. This
   // doesn't appear in the function signature here, but it's crucial for reactivity
@@ -82,7 +81,7 @@ export function Calendar(props:CalendarProps) {
 
     let sorted:Event[] = [];
     if(props.dv_source.length > 0) {
-      let all = await this.dv_api.query(props.dv_source);
+      let all = await dv_api.query(props.dv_source);
       if(!all.successful){
         console.log(`error was: ${all.error}`) ;
         return Result.Err(all.error);
@@ -126,7 +125,7 @@ export function Calendar(props:CalendarProps) {
         }
       }
     } else { // no source provided, do the default behavior and search for uncompleted tasks
-      (await this.dv_api.pages()).file.tasks
+      (await dv_api.pages()).file.tasks
         .where((t:any) => !t.completed && t.text.match(/\d\d\d\d-\d\d-\d\d/))
         .forEach((t:any,_i:number) => {
           let when = parseDatePattern(t.text);

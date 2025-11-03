@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Option } from '../option';
 
 describe('Option', () => {
@@ -62,7 +63,7 @@ describe('Option', () => {
     });
 
     it('should not call function on None', () => {
-      const mockFn = jest.fn(x => x * 2);
+      const mockFn = vi.fn(x => x * 2);
       const opt = Option.None<number>();
       const result = opt.map(mockFn);
 
@@ -93,7 +94,7 @@ describe('Option', () => {
     });
 
     it('should not call function on None', () => {
-      const mockFn = jest.fn(x => Option.Some(x * 2));
+      const mockFn = vi.fn(x => Option.Some(x * 2));
       const opt = Option.None<number>();
       const result = opt.andThen(mockFn);
 
@@ -113,7 +114,7 @@ describe('Option', () => {
     });
 
     it('should short-circuit on None in chain', () => {
-      const mockFn = jest.fn((x: number) => Option.Some(x * 2));
+      const mockFn = vi.fn((x: number) => Option.Some(x * 2));
       const opt = Option.Some(3);
       const result = opt
         .andThen((x: number) => x > 5 ? Option.Some(x) : Option.None<number>())
@@ -182,7 +183,7 @@ describe('Option', () => {
 
   describe('iter', () => {
     it('should call function with Some value', () => {
-      const mockFn = jest.fn();
+      const mockFn = vi.fn();
       const opt = Option.Some(42);
       opt.iter(mockFn);
 
@@ -191,7 +192,7 @@ describe('Option', () => {
     });
 
     it('should not call function on None', () => {
-      const mockFn = jest.fn();
+      const mockFn = vi.fn();
       const opt = Option.None<number>();
       opt.iter(mockFn);
 
